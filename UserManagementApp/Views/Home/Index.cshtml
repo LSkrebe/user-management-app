@@ -1,0 +1,142 @@
+﻿@model IEnumerable<ApplicationUser>
+
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="container mt-3">
+    <h1>@ViewData["Title"]</h1>
+
+    <!-- Toolbar -->
+    <div class="mb-3">
+        <button class="btn btn-danger" id="block-selected">Block</button>
+        <button class="btn btn-success" id="unblock-selected">Unblock</button>
+        <button class="btn btn-danger" id="delete-selected">Delete</button>
+    </div>
+
+    <!-- Table -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    <input type="checkbox" id="select-all">
+                </th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Last Login Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>
+                        <input type="checkbox" class="select-row" data-user-id="@user.Id">
+                    </td>
+                    <td>@user.Name</td>
+                    <td>@user.Email</td>
+                    <td>@user.PhoneNumber</td>
+                    <td>@user.LastLoginTime.ToString("g")</td>
+                    <td>
+                        <span class="badge @(user.IsBlocked ? "bg-danger" : "bg-success")">
+                            @(user.IsBlocked ? "Blocked" : "Active")
+                        </span>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        // Select all checkboxes functionality
+        document.getElementById('select-all').addEventListener('click', function () {
+            const isChecked = this.checked;
+            document.querySelectorAll('.select-row').forEach(function (checkbox) {
+                checkbox.checked = isChecked;
+            });
+        });
+
+        document.getElementById('block-selected').addEventListener('click', async function () {
+          const selectedUsers = getSelectedUsers();
+
+          try {
+            const response = await fetch('/Home/BlockUsers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(selectedUsers)
+            });
+
+            if (!response.ok) {
+              throw new Error(`Error blocking users: ${response.status} - ${await response.text()}`);
+            }
+
+            // Handle successful blocking (e.g., reload the page)
+            window.location.reload();
+
+          } catch (error) {
+            // Handle error (e.g., display an error message)
+            alert(`Error blocking users: ${error.message}`);
+          }
+        });
+
+        document.getElementById('unblock-selected').addEventListener('click', async function () {
+          const selectedUsers = getSelectedUsers();
+
+          try {
+            const response = await fetch('/Home/UnblockUsers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(selectedUsers)
+            });
+
+            if (!response.ok) {
+              throw new Error(`Error unblocking users: ${response.status} - ${await response.text()}`);
+            }
+
+            // Handle successful unblocking (e.g., reload the page)
+            window.location.reload();
+
+          } catch (error) {
+            // Handle error (e.g., display an error message)
+            alert(`Error unblocking users: ${error.message}`);
+          }
+        });
+
+        document.getElementById('delete-selected').addEventListener('click', async function () {
+          const selectedUsers = getSelectedUsers();
+
+          if (confirm("Are you sure you want to delete the selected users?")) {
+            try {
+              const response = await fetch('/Home/DeleteUsers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(selectedUsers)
+              });
+
+              if (!response.ok) {
+                throw new Error(`Error deleting users: ${response.status} - ${await response.text()}`);
+              }
+
+              // Handle successful deletion (e.g., reload the page)
+              window.location.reload();
+
+            } catch (error) {
+              // Handle error (e.g., display an error message)
+              alert(`Error deleting users: ${error.message}`);
+            }
+          }
+        });
+
+        function getSelectedUsers() {
+            const selectedUsers = [];
+            document.querySelectorAll('.select-row:checked').forEach(function (checkbox) {
+                selectedUsers.push(checkbox.dataset.userId);
+            });
+            return selectedUsers;
+        }
+    </script>
+}
